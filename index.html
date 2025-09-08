@@ -177,7 +177,8 @@
   <div id="toast" class="toast">✅ Data Anda telah tersimpan. Terima kasih atas kunjungan Anda.</div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzEYbk92Hk6lMXUzTlxWJWgEEJUTLYZY0bM_Bj8nQjb-izKs1bVt92buiimf6tTXonW/exec";
+    // Ganti dengan URL Web App Apps Script kamu
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPp1G-HWEWrSe6fKH2MGAoApsZyioTutS8cK0vBr2jOhlEiOWI4hDNqLQ-0rjCdFV9/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -209,7 +210,7 @@
       const reader = new FileReader();
       reader.readAsDataURL(foto);
       reader.onloadend = async () => {
-        const base64String = reader.result.split(",")[1]; // ambil base64 saja
+        const base64String = reader.result.split(",")[1]; // hanya ambil base64
 
         const payload = {
           nama: document.getElementById('nama').value,
