@@ -182,7 +182,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyXHUGdqKkIaeB1bvCeaU1V5-iNVSF2LQNh-AyPs8lzOo-4cXfb9_5WNE1eGhmQ8G4/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwQtBByqDhtPLMHW-H0z9HJ0JIleoXYAr0DQN73oLYDJ1hGyABDHolLkBeV1UZ-Dm7L/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -228,45 +228,48 @@
         return;
       }
 
-      const formData = new FormData();
-formData.append('nama', document.getElementById('nama').value);
-formData.append('alamat', document.getElementById('alamat').value);
-formData.append('nohp', document.getElementById('nohp').value);
-formData.append('tgl', document.getElementById('tgl').value);
-formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
-formData.append('fotoName', foto.name);
-formData.append('file', foto);
+      const reader = new FileReader();
+      reader.readAsDataURL(foto);
+      reader.onloadend = async () => {
+        const base64data = reader.result;
 
-      try {
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          body: formData
-        });
+        const formData = new FormData();
+        formData.append('nama', document.getElementById('nama').value);
+        formData.append('alamat', document.getElementById('alamat').value);
+        formData.append('nohp', document.getElementById('nohp').value);
+        formData.append('tgl', document.getElementById('tgl').value);
+        formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
+        formData.append('fotoName', foto.name);
+        formData.append('file', base64data);
 
-        const result = await response.json();
+        try {
+          const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: formData
+          });
 
-        if (result.success) {
-          toast.style.display = 'block';
-          setTimeout(() => {
-            toast.style.display = 'none';
-          }, 3000);
+          const result = await response.json();
 
-          form.reset();
-          lainnyaInput.style.display = 'none';
-        } else {
-          alert("Gagal menyimpan data: " + result.message);
+          if (result.success) {
+            toast.style.display = 'block';
+            setTimeout(() => {
+              toast.style.display = 'none';
+            }, 3000);
+
+            form.reset();
+            lainnyaInput.style.display = 'none';
+          } else {
+            alert("Gagal menyimpan  " + result.message);
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        } finally {
+          loading.style.display = 'none';
         }
-      } catch (error) {
-        alert("Error: " + error.message);
-      } finally {
-        loading.style.display = 'none';
-      }
+      };
     });
   </script>
 
 </body>
 
 </html>
-
-
-
