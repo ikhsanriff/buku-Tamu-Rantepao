@@ -177,7 +177,7 @@
   </div>
 
   <script>
-    // PERHATIAN: URL SheetDB sudah dibersihkan dari spasi
+    // URL SheetDB — TIDAK ADA SPASI!
     const SHEETDB_API = "https://sheetdb.io/api/v1/dnj3qebts72on";
 
     const form = document.getElementById('guestForm');
@@ -209,51 +209,98 @@
       const menit = String(date.getMinutes()).padStart(2, '0');
       const detik = String(date.getSeconds()).padStart(2, '0');
 
-      // Ganti "WITA" sesuai zona waktu kamu
       return `${namaHari}, ${tanggal} ${namaBulan} ${tahun} pukul ${jam}:${menit}:${detik} WITA`;
+    }
+
+    // Fungsi untuk hitung jarak antara dua koordinat (dalam meter)
+    function hitungJarak(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // jari-jari bumi dalam meter
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c; // jarak dalam meter
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Koordinat KUA Rantepao
+      const KUA_LAT = -2.967013;
+      const KUA_LON = 119.905454;
+      const MAX_JARAK = 100; // meter
+
+      // Dapatkan lokasi pengguna
+      if (!navigator.geolocation) {
+        alert("Browser Anda tidak mendukung geolocation.");
+        return;
+      }
+
       loading.style.display = 'flex';
 
-      // Dapatkan timestamp format Indonesia
-      const now = new Date();
-      const timestamp = formatTanggalIndonesia(now);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const userLat = position.coords.latitude;
+          const userLon = position.coords.longitude;
 
-      const data = {
-        Nama: document.getElementById('nama').value,
-        Alamat: document.getElementById('alamat').value,
-        "No HP": document.getElementById('nohp').value,
-        Tanggal: document.getElementById('tgl').value,
-        Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
-        Timestamp: timestamp
-      };
+          const jarak = hitungJarak(KUA_LAT, KUA_LON, userLat, userLon);
 
-      try {
-        const response = await fetch(SHEETDB_API, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
+          if (jarak > MAX_JARAK) {
+            loading.style.display = 'none';
+            alert(`Anda berada di luar radius 100 meter dari KUA Rantepao.\nJarak Anda: ${jarak.toFixed(2)} meter`);
+            return;
+          }
 
-        if (response.ok) {
-          // Tampilkan toast notification
-          toast.style.display = 'block';
-          setTimeout(() => {
-            toast.style.display = 'none';
-          }, 3000); // Sembunyikan setelah 3 detik
+          // Lanjutkan kirim data jika dalam radius
+          const now = new Date();
+          const timestamp = formatTanggalIndonesia(now);
 
-          form.reset();
-          lainnyaInput.style.display = 'none';
-        } else {
-          alert("Gagal menyimpan data. Coba lagi.");
+          const data = {
+            Nama: document.getElementById('nama').value,
+            Alamat: document.getElementById('alamat').value,
+            "No HP": document.getElementById('nohp').value,
+            Tanggal: document.getElementById('tgl').value,
+            Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
+            Timestamp: timestamp,
+            "Koordinat": `${userLat.toFixed(6)}, ${userLon.toFixed(6)}`,
+            "Jarak (meter)": jarak.toFixed(2)
+          };
+
+          try {
+            const response = await fetch(SHEETDB_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+              toast.style.display = 'block';
+              setTimeout(() => {
+                toast.style.display = 'none';
+              }, 3000);
+
+              form.reset();
+              lainnyaInput.style.display = 'none';
+            } else {
+              alert("Gagal menyimpan data. Coba lagi.");
+            }
+          } catch (error) {
+            alert("Error: " + error.message);
+          } finally {
+            loading.style.display = 'none';
+          }
+        },
+        (error) => {
+          loading.style.display = 'none';
+          alert("Gagal mendapatkan lokasi Anda. Pastikan GPS aktif dan izinkan akses lokasi.");
         }
-      } catch (error) {
-        alert("Error: " + error.message);
-      } finally {
-        loading.style.display = 'none';
-      }
+      );
     });
   </script>
 
