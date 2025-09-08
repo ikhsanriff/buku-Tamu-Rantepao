@@ -264,65 +264,71 @@
       loading.style.display = 'flex';
 
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const userLat = position.coords.latitude;
-          const userLon = position.coords.longitude;
+  async (position) => {
+    const userLat = position.coords.latitude;
+    const userLon = position.coords.longitude;
 
-          const jarak = hitungJarak(KUA_LAT, KUA_LON, userLat, userLon);
+    const jarak = hitungJarak(KUA_LAT, KUA_LON, userLat, userLon);
 
-          if (jarak > MAX_JARAK) {
-            loading.style.display = 'none';
-            alert(`Anda berada di luar radius 100 meter dari KUA Rantepao.\nJarak Anda: ${jarak.toFixed(2)} meter`);
-            return;
-          }
+    if (jarak > MAX_JARAK) {
+      loading.style.display = 'none';
+      alert(`Anda berada di luar radius 100 meter dari KUA Rantepao.\nJarak Anda: ${jarak.toFixed(2)} meter`);
+      return;
+    }
 
-          // Lanjutkan kirim data jika dalam radius
-          const now = new Date();
-          const timestamp = formatTanggalIndonesia(now);
+    // Lanjutkan kirim data jika dalam radius
+    const now = new Date();
+    const timestamp = formatTanggalIndonesia(now);
 
-          const data = {
-            Nama: document.getElementById('nama').value,
-            Alamat: document.getElementById('alamat').value,
-            "No HP": document.getElementById('nohp').value,
-            Tanggal: document.getElementById('tgl').value,
-            Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
-            Timestamp: timestamp,
-            "Koordinat": `${userLat.toFixed(6)}, ${userLon.toFixed(6)}`,
-            "Jarak (meter)": jarak.toFixed(2)
-          };
+    const data = {
+      Nama: document.getElementById('nama').value,
+      Alamat: document.getElementById('alamat').value,
+      "No HP": document.getElementById('nohp').value,
+      Tanggal: document.getElementById('tgl').value,
+      Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
+      Timestamp: timestamp,
+      "Koordinat": `${userLat.toFixed(6)}, ${userLon.toFixed(6)}`,
+      "Jarak (meter)": jarak.toFixed(2)
+    };
 
-          try {
-            const response = await fetch(SHEETDB_API, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
+    try {
+      const response = await fetch(SHEETDB_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-            if (response.ok) {
-              toast.style.display = 'block';
-              setTimeout(() => {
-                toast.style.display = 'none';
-              }, 3000);
+      if (response.ok) {
+        toast.style.display = 'block';
+        setTimeout(() => {
+          toast.style.display = 'none';
+        }, 3000);
 
-              form.reset();
-              lainnyaInput.style.display = 'none';
-            } else {
-              alert("Gagal menyimpan data. Coba lagi.");
-            }
-          } catch (error) {
-            alert("Error: " + error.message);
-          } finally {
-            loading.style.display = 'none';
-          }
-        },
-        (error) => {
-          loading.style.display = 'none';
-          alert("Gagal mendapatkan lokasi Anda. Pastikan GPS aktif dan izinkan akses lokasi.");
-        }
-      );
+        form.reset();
+        lainnyaInput.style.display = 'none';
+      } else {
+        alert("Gagal menyimpan data. Coba lagi.");
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    } finally {
+      loading.style.display = 'none';
+    }
+  },
+  (error) => {
+    loading.style.display = 'none';
+    alert("Gagal mendapatkan lokasi Anda. Pastikan GPS aktif dan izinkan akses lokasi.");
+  },
+  {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 0
+  }
+);
     });
   </script>
 
 </body>
 
 </html>
+
