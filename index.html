@@ -46,7 +46,8 @@
     input[type="text"],
     input[type="tel"],
     input[type="date"],
-    select {
+    select,
+    input[type="file"] {
       width: 100%;
       padding: 14px;
       border: 1px solid #ccc;
@@ -165,6 +166,10 @@
       <div class="input-group">
         <input type="text" id="lainnyaInput" name="lainnya" placeholder="Isi tujuan lainnya..." style="display:none;">
       </div>
+      <div class="input-group">
+        <label for="foto">Foto Dokumentasi</label>
+        <input type="file" id="foto" name="foto" accept="image/*" required>
+      </div>
       <button type="submit">Submit</button>
     </form>
   </div>
@@ -177,8 +182,7 @@
   </div>
 
   <script>
-    // PERHATIAN: URL SheetDB sudah dibersihkan dari spasi
-    const SHEETDB_API = "https://sheetdb.io/api/v1/dnj3qebts72on";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxoJu2dLiHGGpiVjK6kBM70lt7I2X4YgKXv2nvNRcUfH8vk9bHhGmAYZbImboPKJAzg/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -217,37 +221,40 @@
       e.preventDefault();
       loading.style.display = 'flex';
 
-      // Dapatkan timestamp format Indonesia
-      const now = new Date();
-      const timestamp = formatTanggalIndonesia(now);
+      const foto = document.getElementById('foto').files[0];
+      if (!foto) {
+        alert("Harap pilih foto dokumentasi");
+        loading.style.display = 'none';
+        return;
+      }
 
-      const data = {
-        Nama: document.getElementById('nama').value,
-        Alamat: document.getElementById('alamat').value,
-        "No HP": document.getElementById('nohp').value,
-        Tanggal: document.getElementById('tgl').value,
-        Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
-        Timestamp: timestamp
-      };
+      const formData = new FormData();
+      formData.append('nama', document.getElementById('nama').value);
+      formData.append('alamat', document.getElementById('alamat').value);
+      formData.append('nohp', document.getElementById('nohp').value);
+      formData.append('tgl', document.getElementById('tgl').value);
+      formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
+      formData.append('fotoName', foto.name);
+      formData.append('file', foto);
 
       try {
-        const response = await fetch(SHEETDB_API, {
+        const response = await fetch(GAS_URL, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
+          body: formData
         });
 
-        if (response.ok) {
-          // Tampilkan toast notification
+        const result = await response.json();
+
+        if (result.success) {
           toast.style.display = 'block';
           setTimeout(() => {
             toast.style.display = 'none';
-          }, 3000); // Sembunyikan setelah 3 detik
+          }, 3000);
 
           form.reset();
           lainnyaInput.style.display = 'none';
         } else {
-          alert("Gagal menyimpan data. Coba lagi.");
+          alert("Gagal menyimpan data: " + result.message);
         }
       } catch (error) {
         alert("Error: " + error.message);
