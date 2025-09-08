@@ -177,8 +177,7 @@
   <div id="toast" class="toast">✅ Data Anda telah tersimpan. Terima kasih atas kunjungan Anda.</div>
 
   <script>
-    // Ganti dengan URL Web App Apps Script kamu
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPp1G-HWEWrSe6fKH2MGAoApsZyioTutS8cK0vBr2jOhlEiOWI4hDNqLQ-0rjCdFV9/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxkFzj7Q9Svy4GGHIDhBnByeZbNJ6_obgmLtoa04oq9B95L8sssti6g013SHPTT2rYa/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -210,7 +209,7 @@
       const reader = new FileReader();
       reader.readAsDataURL(foto);
       reader.onloadend = async () => {
-        const base64String = reader.result.split(",")[1]; // hanya ambil base64
+        const base64String = reader.result.split(",")[1];
 
         const payload = {
           nama: document.getElementById('nama').value,
@@ -225,7 +224,9 @@
         try {
           const response = await fetch(GAS_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
           });
 
@@ -249,4 +250,3 @@
   </script>
 </body>
 </html>
-
