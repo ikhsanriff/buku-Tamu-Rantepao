@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buku Tamu KUA Rantepao</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f1f1f1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px;
+      background: #0b6623;
+      color: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-container {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      color: #333;
+      font-weight: bold;
+    }
+
+    /* Toast Notification Style */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #28a745;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+      display: none;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%) translateX(-50%);
+      }
+
+      to {
+        transform: translateY(0) translateX(-50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Kementerian_Agama_new_logo.png" alt="Logo Kemenag"
+      style="max-width: 80px; height: auto; display: block; margin: 0 auto 15px;">
+    <h2>Buku Tamu KUA Rantepao</h2>
+  </div>
+
+  <div class="form-container">
+    <form id="guestForm">
+      <div class="input-group">
+        <label for="nama">Nama Lengkap</label>
+        <input type="text" id="nama" name="nama" placeholder="Masukkan Nama" required>
+      </div>
+      <div class="input-group">
+        <label for="alamat">Alamat</label>
+        <input type="text" id="alamat" name="alamat" placeholder="Masukkan Alamat" required>
+      </div>
+      <div class="input-group">
+        <label for="nohp">Nomor HP</label>
+        <input type="tel" id="nohp" name="nohp" placeholder="Masukkan Nomor HP" required>
+      </div>
+      <div class="input-group">
+        <label for="tgl">Tanggal</label>
+        <input type="date" id="tgl" name="tgl" required>
+      </div>
+      <div class="input-group">
+        <label for="keperluan">Maksud/Tujuan</label>
+        <select id="keperluan" name="keperluan" required>
+          <option value="">-- Pilih Maksud/Tujuan --</option>
+          <option>Pendaftaran Nikah</option>
+          <option>Rekomendasi Nikah</option>
+          <option>Duplikat Buku Nikah</option>
+          <option>Legalisasi Buku Nikah</option>
+          <option>Taukil Wali bil Kitabah</option>
+          <option>Perubahan Data pada Buku Nikah</option>
+          <option>Pendaftaran Bukti Nikah di Luar Negeri</option>
+          <option>Pencatatan Perjanjian Nikah</option>
+          <option>Isbat Nikah</option>
+          <option>Konsultasi Agama Islam</option>
+          <option>Konsultasi Agama Kristen</option>
+          <option>Kemasjidan</option>
+          <option>Wakaf</option>
+          <option>Zakat</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <input type="text" id="lainnyaInput" name="lainnya" placeholder="Isi tujuan lainnya..." style="display:none;">
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <div class="loading" id="loading">Mengirim data...</div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    ✅ Data Anda telah tersimpan. Terima kasih atas kunjungan Anda.
+  </div>
+
+  <script>
+    // PERHATIAN: URL SheetDB sudah dibersihkan dari spasi
+    const SHEETDB_API = "https://sheetdb.io/api/v1/dnj3qebts72on";
+
+    const form = document.getElementById('guestForm');
+    const keperluan = document.getElementById('keperluan');
+    const lainnyaInput = document.getElementById('lainnyaInput');
+    const loading = document.getElementById('loading');
+    const toast = document.getElementById('toast');
+
+    keperluan.addEventListener('change', () => {
+      if (keperluan.value === 'lainnya') {
+        lainnyaInput.style.display = 'block';
+        lainnyaInput.required = true;
+      } else {
+        lainnyaInput.style.display = 'none';
+        lainnyaInput.required = false;
+      }
+    });
+
+    // Fungsi untuk format tanggal Indonesia
+    function formatTanggalIndonesia(date) {
+      const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+      const namaHari = hari[date.getDay()];
+      const tanggal = date.getDate();
+      const namaBulan = bulan[date.getMonth()];
+      const tahun = date.getFullYear();
+      const jam = String(date.getHours()).padStart(2, '0');
+      const menit = String(date.getMinutes()).padStart(2, '0');
+      const detik = String(date.getSeconds()).padStart(2, '0');
+
+      // Ganti "WITA" sesuai zona waktu kamu
+      return `${namaHari}, ${tanggal} ${namaBulan} ${tahun} pukul ${jam}:${menit}:${detik} WITA`;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loading.style.display = 'flex';
+
+      // Dapatkan timestamp format Indonesia
+      const now = new Date();
+      const timestamp = formatTanggalIndonesia(now);
+
+      const data = {
+        Nama: document.getElementById('nama').value,
+        Alamat: document.getElementById('alamat').value,
+        "No HP": document.getElementById('nohp').value,
+        Tanggal: document.getElementById('tgl').value,
+        Keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
+        Timestamp: timestamp
+      };
+
+      try {
+        const response = await fetch(SHEETDB_API, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          // Tampilkan toast notification
+          toast.style.display = 'block';
+          setTimeout(() => {
+            toast.style.display = 'none';
+          }, 3000); // Sembunyikan setelah 3 detik
+
+          form.reset();
+          lainnyaInput.style.display = 'none';
+        } else {
+          alert("Gagal menyimpan data. Coba lagi.");
+        }
+      } catch (error) {
+        alert("Error: " + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+
+</body>
+
+</html>
