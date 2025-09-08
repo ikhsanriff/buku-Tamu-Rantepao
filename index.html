@@ -182,7 +182,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzxP2cbVpb-EeaI2ERkzsUpmXuC1XGCzCes4Vbz98TdEzPJC7mXGmQ1VonHaPKpGoU7/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyXHUGdqKkIaeB1bvCeaU1V5-iNVSF2LQNh-AyPs8lzOo-4cXfb9_5WNE1eGhmQ8G4/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -229,13 +229,13 @@
       }
 
       const formData = new FormData();
-      formData.append('nama', document.getElementById('nama').value);
-      formData.append('alamat', document.getElementById('alamat').value);
-      formData.append('nohp', document.getElementById('nohp').value);
-      formData.append('tgl', document.getElementById('tgl').value);
-      formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
-      formData.append('fotoName', foto.name);
-      formData.append('file', foto);
+formData.append('nama', document.getElementById('nama').value);
+formData.append('alamat', document.getElementById('alamat').value);
+formData.append('nohp', document.getElementById('nohp').value);
+formData.append('tgl', document.getElementById('tgl').value);
+formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
+formData.append('fotoName', foto.name);
+formData.append('file', foto);
 
       try {
         const response = await fetch(GAS_URL, {
@@ -267,5 +267,6 @@
 </body>
 
 </html>
+
 
 
