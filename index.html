@@ -182,7 +182,8 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwQtBByqDhtPLMHW-H0z9HJ0JIleoXYAr0DQN73oLYDJ1hGyABDHolLkBeV1UZ-Dm7L/exec";
+    // GANTI DENGAN URL WEB APP BARU DARI GAS
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyqSkopWTMS_jhgCVvq8Q4aDH72Na6cyHDQlGOBpB4Phihf8KEraUpWfFCQUBTZlrmQ/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -213,7 +214,6 @@
       const menit = String(date.getMinutes()).padStart(2, '0');
       const detik = String(date.getSeconds()).padStart(2, '0');
 
-      // Ganti "WITA" sesuai zona waktu kamu
       return `${namaHari}, ${tanggal} ${namaBulan} ${tahun} pukul ${jam}:${menit}:${detik} WITA`;
     }
 
@@ -233,19 +233,22 @@
       reader.onloadend = async () => {
         const base64data = reader.result;
 
-        const formData = new FormData();
-        formData.append('nama', document.getElementById('nama').value);
-        formData.append('alamat', document.getElementById('alamat').value);
-        formData.append('nohp', document.getElementById('nohp').value);
-        formData.append('tgl', document.getElementById('tgl').value);
-        formData.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
-        formData.append('fotoName', foto.name);
-        formData.append('file', base64data);
+        // Encode data sebagai URL encoded string
+        const params = new URLSearchParams();
+        params.append('nama', document.getElementById('nama').value);
+        params.append('alamat', document.getElementById('alamat').value);
+        params.append('nohp', document.getElementById('nohp').value);
+        params.append('tgl', document.getElementById('tgl').value);
+        params.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
+        params.append('foto', base64data);
 
         try {
           const response = await fetch(GAS_URL, {
             method: 'POST',
-            body: formData
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
           });
 
           const result = await response.json();
