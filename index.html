@@ -88,7 +88,6 @@
       font-weight: bold;
     }
 
-    /* Toast Notification Style */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -128,23 +127,23 @@
     <form id="guestForm">
       <div class="input-group">
         <label for="nama">Nama Lengkap</label>
-        <input type="text" id="nama" name="nama" placeholder="Masukkan Nama" required>
+        <input type="text" id="nama" required>
       </div>
       <div class="input-group">
         <label for="alamat">Alamat</label>
-        <input type="text" id="alamat" name="alamat" placeholder="Masukkan Alamat" required>
+        <input type="text" id="alamat" required>
       </div>
       <div class="input-group">
         <label for="nohp">Nomor HP</label>
-        <input type="tel" id="nohp" name="nohp" placeholder="Masukkan Nomor HP" required>
+        <input type="tel" id="nohp" required>
       </div>
       <div class="input-group">
         <label for="tgl">Tanggal</label>
-        <input type="date" id="tgl" name="tgl" required>
+        <input type="date" id="tgl" required>
       </div>
       <div class="input-group">
         <label for="keperluan">Maksud/Tujuan</label>
-        <select id="keperluan" name="keperluan" required>
+        <select id="keperluan" required>
           <option value="">-- Pilih Maksud/Tujuan --</option>
           <option>Pendaftaran Nikah</option>
           <option>Rekomendasi Nikah</option>
@@ -164,26 +163,21 @@
         </select>
       </div>
       <div class="input-group">
-        <input type="text" id="lainnyaInput" name="lainnya" placeholder="Isi tujuan lainnya..." style="display:none;">
+        <input type="text" id="lainnyaInput" placeholder="Isi tujuan lainnya..." style="display:none;">
       </div>
       <div class="input-group">
         <label for="foto">Foto Dokumentasi</label>
-        <input type="file" id="foto" name="foto" accept="image/*" required>
+        <input type="file" id="foto" accept="image/*" required>
       </div>
       <button type="submit">Submit</button>
     </form>
   </div>
 
   <div class="loading" id="loading">Mengirim data...</div>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">
-    ✅ Data Anda telah tersimpan. Terima kasih atas kunjungan Anda.
-  </div>
+  <div id="toast" class="toast">✅ Data Anda telah tersimpan. Terima kasih atas kunjungan Anda.</div>
 
   <script>
-    // GANTI DENGAN URL WEB APP BARU DARI GAS
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwQzsIsoD6R2KPgSHAXY247yBUbnoRQd18AZGTS_7yMnkm_sQcBNBgJy_e8MM-U9UZX/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzEYbk92Hk6lMXUzTlxWJWgEEJUTLYZY0bM_Bj8nQjb-izKs1bVt92buiimf6tTXonW/exec";
 
     const form = document.getElementById('guestForm');
     const keperluan = document.getElementById('keperluan');
@@ -201,22 +195,6 @@
       }
     });
 
-    // Fungsi untuk format tanggal Indonesia
-    function formatTanggalIndonesia(date) {
-      const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-      const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-
-      const namaHari = hari[date.getDay()];
-      const tanggal = date.getDate();
-      const namaBulan = bulan[date.getMonth()];
-      const tahun = date.getFullYear();
-      const jam = String(date.getHours()).padStart(2, '0');
-      const menit = String(date.getMinutes()).padStart(2, '0');
-      const detik = String(date.getSeconds()).padStart(2, '0');
-
-      return `${namaHari}, ${tanggal} ${namaBulan} ${tahun} pukul ${jam}:${menit}:${detik} WITA`;
-    }
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       loading.style.display = 'flex';
@@ -231,38 +209,34 @@
       const reader = new FileReader();
       reader.readAsDataURL(foto);
       reader.onloadend = async () => {
-        const base64data = reader.result;
+        const base64String = reader.result.split(",")[1]; // ambil base64 saja
 
-        // Encode data sebagai URL encoded string
-        const params = new URLSearchParams();
-        params.append('nama', document.getElementById('nama').value);
-        params.append('alamat', document.getElementById('alamat').value);
-        params.append('nohp', document.getElementById('nohp').value);
-        params.append('tgl', document.getElementById('tgl').value);
-        params.append('keperluan', keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value);
-        params.append('foto', base64data);
+        const payload = {
+          nama: document.getElementById('nama').value,
+          alamat: document.getElementById('alamat').value,
+          nohp: document.getElementById('nohp').value,
+          tgl: document.getElementById('tgl').value,
+          keperluan: keperluan.value === 'lainnya' ? lainnyaInput.value : keperluan.value,
+          fotoName: foto.name,
+          foto: base64String
+        };
 
         try {
           const response = await fetch(GAS_URL, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: params.toString()
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
           });
 
           const result = await response.json();
 
           if (result.success) {
             toast.style.display = 'block';
-            setTimeout(() => {
-              toast.style.display = 'none';
-            }, 3000);
-
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
             form.reset();
             lainnyaInput.style.display = 'none';
           } else {
-            alert("Gagal menyimpan  " + result.message);
+            alert("Gagal menyimpan: " + result.message);
           }
         } catch (error) {
           alert("Error: " + error.message);
@@ -272,9 +246,5 @@
       };
     });
   </script>
-
 </body>
-
 </html>
-
-
