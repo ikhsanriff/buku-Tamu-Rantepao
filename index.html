@@ -3,149 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buku Tamu KUA Rantepao</title>
+  <title>Buku Tamu Digital</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f1f1f1; margin:0; padding:0; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; margin-top: 30px; }
-    h2 { text-align: center; color: #0b6623; }
-    .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
-    button { width: 100%; padding: 12px; background: #28a745; border: none; color: white; font-size: 16px; border-radius: 8px; cursor: pointer; }
-    button:hover { background: #218838; }
-    .toast { display: none; background: #28a745; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; }
-    .error { background: #dc3545 !important; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; }
+    h2 { text-align: center; }
+    form { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, textarea, button {
+      width: 100%; padding: 10px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    button { background: #28a745; color: white; font-weight: bold; cursor: pointer; }
+    button:disabled { background: gray; cursor: not-allowed; }
+    .error { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Buku Tamu KUA Rantepao</h2>
-    <form id="guestForm">
-      <div class="input-group">
-        <label>Nama Lengkap</label>
-        <input type="text" id="nama" required>
-      </div>
-      <div class="input-group">
-        <label>Alamat</label>
-        <input type="text" id="alamat" required>
-      </div>
-      <div class="input-group">
-        <label>Nomor HP</label>
-        <input type="tel" id="nohp" required>
-      </div>
-      <div class="input-group">
-        <label>Tanggal</label>
-        <input type="date" id="tgl" required>
-      </div>
-      <div class="input-group">
-        <label>Maksud/Tujuan</label>
-        <select id="keperluan" required>
-          <option value="">-- Pilih Maksud/Tujuan --</option>
-          <option>Pendaftaran Nikah</option>
-          <option>Rekomendasi Nikah</option>
-          <option>Konsultasi Agama</option>
-          <option value="lainnya">Lainnya</option>
-        </select>
-        <input type="text" id="lainnyaInput" placeholder="Isi tujuan lainnya..." style="display:none; margin-top:10px;">
-      </div>
-      <button type="submit">Kirim</button>
-    </form>
-    <div id="toast" class="toast"></div>
-  </div>
+  <h2>Buku Tamu Digital KUA</h2>
+
+  <form action="https://sheetdb.io/api/v1/dnj3qebts72on" method="post" id="guestForm">
+    <input type="hidden" name="timestamp" id="timestamp">
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+
+    <label>Nama</label>
+    <input type="text" name="nama" required>
+
+    <label>Alamat</label>
+    <input type="text" name="alamat" required>
+
+    <label>No. HP</label>
+    <input type="text" name="nohp" required>
+
+    <label>Keperluan</label>
+    <textarea name="keperluan" required></textarea>
+
+    <p id="location-status" class="error"></p>
+    <button type="submit" id="submitBtn" disabled>Kirim</button>
+  </form>
 
   <script>
-    const SHEETDB_API = "https://sheetdb.io/api/v1/dnj3qebts72on";
-    const OFFICE_LAT = -2.967013;
-    const OFFICE_LNG = 119.905454;
-    const RADIUS_M = 100;
+    // Lokasi KUA (pusat validasi)
+    const KUA_LAT = -2.967013;
+    const KUA_LNG = 119.905454;
+    const MAX_DISTANCE = 100; // meter
 
-    const form = document.getElementById("guestForm");
-    const keperluan = document.getElementById("keperluan");
-    const lainnyaInput = document.getElementById("lainnyaInput");
-    const toast = document.getElementById("toast");
+    // Fungsi hitung jarak (Haversine formula)
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-    keperluan.addEventListener("change", () => {
-      if (keperluan.value === "lainnya") {
-        lainnyaInput.style.display = "block";
-        lainnyaInput.required = true;
-      } else {
-        lainnyaInput.style.display = "none";
-        lainnyaInput.required = false;
-      }
-    });
-
-    function haversine(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // meter
-      const toRad = deg => deg * Math.PI / 180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      return R * c; // meter
     }
 
-    form.addEventListener("submit", e => {
-      e.preventDefault();
+    const statusEl = document.getElementById("location-status");
+    const submitBtn = document.getElementById("submitBtn");
 
-      if (!navigator.geolocation) {
-        showToast("Geolocation tidak didukung di browser Anda", true);
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(async pos => {
+    // Ambil lokasi user
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
         const userLat = pos.coords.latitude;
         const userLng = pos.coords.longitude;
+        document.getElementById("latitude").value = userLat;
+        document.getElementById("longitude").value = userLng;
 
-        const distance = haversine(userLat, userLng, OFFICE_LAT, OFFICE_LNG);
+        const distance = getDistance(userLat, userLng, KUA_LAT, KUA_LNG);
 
-        if (distance > RADIUS_M) {
-          showToast("Anda di luar radius 100m dari kantor. Data tidak bisa dikirim.", true);
-          return;
+        if (distance <= MAX_DISTANCE) {
+          statusEl.textContent = "✅ Anda berada dalam radius KUA, form bisa dikirim.";
+          submitBtn.disabled = false;
+        } else {
+          statusEl.textContent = "❌ Anda berada di luar radius 100 meter dari KUA.";
+          submitBtn.disabled = true;
         }
-
-        const payload = {
-          data: [{
-            nama: document.getElementById("nama").value,
-            alamat: document.getElementById("alamat").value,
-            nohp: document.getElementById("nohp").value,
-            tgl: document.getElementById("tgl").value,
-            keperluan: keperluan.value === "lainnya" ? lainnyaInput.value : keperluan.value,
-            latitude: userLat,
-            longitude: userLng,
-            timestamp: new Date().toLocaleString("id-ID", { timeZone: "Asia/Makassar" })
-          }]
-        };
-
-        try {
-          const res = await fetch(SHEETDB_API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          if (res.ok) {
-            showToast("✅ Data berhasil disimpan");
-            form.reset();
-            lainnyaInput.style.display = "none";
-          } else {
-            showToast("Gagal menyimpan data", true);
-          }
-        } catch (err) {
-          showToast("Error: " + err.message, true);
-        }
-      }, () => {
-        showToast("Tidak bisa mendapatkan lokasi Anda", true);
+      }, err => {
+        statusEl.textContent = "❌ Lokasi tidak bisa diakses. Aktifkan GPS.";
       });
-    });
-
-    function showToast(msg, isError = false) {
-      toast.innerText = msg;
-      toast.classList.toggle("error", isError);
-      toast.style.display = "block";
-      setTimeout(() => toast.style.display = "none", 4000);
+    } else {
+      statusEl.textContent = "❌ Browser tidak mendukung geolokasi.";
     }
+
+    // Tambahkan timestamp otomatis saat submit
+    document.getElementById("guestForm").addEventListener("submit", function(){
+      document.getElementById("timestamp").value = new Date().toLocaleString("id-ID");
+    });
   </script>
 </body>
 </html>
